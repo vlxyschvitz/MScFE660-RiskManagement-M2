@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("sr_theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<title>Modeling and Hedging Variance: Interactive Study Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1829;--panel:#13223a;--ink:#e8ebf2;--muted:#9aa6bd;--line:#25354f;--accent:#7f9fd0;--brass:#c9a86a;--alert:#e0707f;--warn:#e0b25c;--ok:#5cc4a8;--soft:#1a2c48;--shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -12px rgba(0,0,0,.5);--node:#3b5f96;--nodeX:#b5394a;color-scheme:dark}
+:root[data-theme=light]{--bg:#f4f5f7;--panel:#fff;--ink:#14213a;--muted:#667189;--line:#dde1e8;--accent:#1e3a5f;--brass:#a8844a;--alert:#9e2b3a;--warn:#b98a2e;--ok:#2b7a67;--soft:#eceff4;--shadow:0 1px 2px rgba(20,33,58,.04),0 12px 32px -12px rgba(20,33,58,.14);--node:#1e3a5f;--nodeX:#9e2b3a;color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;line-height:1.15;margin:0 0 .5em;font-weight:600;letter-spacing:-.01em}
+h2{font-size:clamp(2.2rem,4vw,3.2rem);font-weight:500;padding-bottom:.35em;margin-bottom:.45em;border-bottom:1px solid var(--line);position:relative}
+h2::after{content:"";position:absolute;left:0;bottom:-1px;width:72px;height:2px;background:var(--brass)}
+h3{font-size:1.55rem;margin-top:2em}
+.shell{display:grid;grid-template-columns:300px 1fr;min-height:100vh}
+nav{position:sticky;top:0;height:100vh;padding:44px 26px;background:linear-gradient(180deg,#0b1830,#0f2142);color:#e8ebf2;overflow:auto}
+nav h1{font-size:2.1rem;font-weight:500;color:#fff;margin:0;padding-bottom:16px;border-bottom:1px solid rgba(201,168,106,.5)}
+nav p{color:#a9b5cc;font-size:.82rem;margin:14px 0 36px;letter-spacing:.04em}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;border-left:1px solid rgba(255,255,255,.14);padding:14px 16px;margin:0;color:#a9b5cc;font:inherit;font-size:.95rem;line-height:1.35;cursor:pointer;transition:color .2s,background .2s,border-color .2s}
+nav button:hover{color:#fff;background:rgba(255,255,255,.04)}
+nav button[aria-current=true]{color:#fff;border-left:2px solid #c9a86a;background:rgba(201,168,106,.08);font-weight:600}
+nav .done::after{content:" ✓";color:#7fd6bd}
+main{padding:56px clamp(20px,6vw,88px) 96px;max-width:1040px}
+section{display:none}
+section.on{display:block;animation:rise .5s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.lead{font-family:"Cormorant Garamond",Georgia,serif;font-size:1.5rem;line-height:1.5;color:var(--muted);max-width:50ch;margin:0 0 1.5em}
+p,li{max-width:68ch}
+li{margin-bottom:.5em}
+b{font-weight:600}
+.lab{background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--brass);border-radius:3px;padding:32px 34px;margin:32px 0;box-shadow:var(--shadow)}
+.lab h3{margin-top:0;font-size:1.7rem}
+.row{display:grid;grid-template-columns:210px 1fr 64px;gap:16px;align-items:center;margin:14px 0;font-size:.93rem}
+.row output{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line)}
+input[type=range]::-moz-range-track{height:2px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-7px;border-radius:50%;background:var(--panel);border:2px solid var(--brass);box-shadow:0 2px 6px rgba(20,33,58,.25);transition:transform .15s}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--brass)}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.2)}
+.meter{height:5px;background:var(--soft);border-radius:3px;overflow:hidden;margin:6px 0 12px}
+.meter i{display:block;height:100%;border-radius:3px;transition:width .35s cubic-bezier(.2,.7,.2,1),background .3s}
+.big{font-family:"Cormorant Garamond",serif;font-size:5rem;font-weight:500;line-height:1;margin-top:10px;font-variant-numeric:lining-nums}
+.cols{display:grid;grid-template-columns:1.1fr 1fr;gap:34px;align-items:center}
+.stat{display:flex;gap:0;flex-wrap:wrap;margin-top:18px;border-top:1px solid var(--line)}
+.stat div{flex:1;min-width:120px;padding:14px 18px 4px 0;margin-right:18px}
+.stat small{display:block;color:var(--muted);font-size:.8rem;line-height:1.3;margin-bottom:2px}
+.stat b{font-family:"Cormorant Garamond",serif;font-size:2.1rem;font-weight:600;font-variant-numeric:lining-nums tabular-nums}
+.note{color:var(--muted);font-size:.9rem}
+table{border-collapse:collapse;width:100%;font-size:.93rem;margin:18px 0;background:var(--panel);box-shadow:var(--shadow);border-radius:3px}
+th{font-weight:600;color:var(--accent);border-bottom:2px solid var(--brass)}
+th,td{padding:13px 16px;text-align:left;vertical-align:top}
+td{border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+.btn{background:transparent;color:var(--accent);border:1px solid var(--brass);border-radius:2px;padding:9px 22px;font:inherit;font-size:.9rem;cursor:pointer;transition:background .2s,color .2s}
+.btn:hover{background:var(--brass);color:#fff}
+.quiz{margin-top:64px;padding:32px 34px;background:linear-gradient(180deg,var(--soft),transparent);border-left:2px solid var(--brass);border-radius:0 3px 3px 0}
+.quiz h3{margin-top:0}
+.q{margin:26px 0}.q p{font-weight:600;margin:0 0 10px}
+.q label{display:block;padding:11px 16px;border:1px solid var(--line);border-radius:2px;margin:7px 0;cursor:pointer;background:var(--panel);transition:border-color .2s,transform .2s}
+.q label:hover{border-color:var(--brass);transform:translateX(3px)}
+.q input{accent-color:var(--brass);margin-right:8px}
+.q .fb{font-size:.9rem;margin-top:8px;min-height:1.2em}
+.q .good{color:var(--ok)}.q .bad{color:var(--alert)}
+svg text{fill:var(--ink);font:600 12px "Hanken Grotesk",sans-serif}
+button:focus-visible,input:focus-visible,g:focus-visible,label:focus-within{outline:2px solid var(--brass);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){section.on{animation:none}*{transition:none!important}}
+@media(max-width:860px){
+.shell{display:block}
+nav{position:static;height:auto;display:flex;gap:4px;overflow-x:auto;padding:14px}
+nav h1,nav p{display:none}
+nav button{white-space:nowrap;width:auto;border-left:0;border-bottom:2px solid transparent;padding:10px 14px}
+nav button[aria-current=true]{border-left:0;border-bottom-color:#c9a86a}
+main{padding-top:36px}
+.row{grid-template-columns:1fr 56px}.row label{grid-column:1/-1}
+.cols{grid-template-columns:1fr}.lab,.quiz{padding:24px 20px}.big{font-size:4rem}
+table{display:block;overflow-x:auto}
+}
+.mods{margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.14)}
+.mods a{display:block;color:#a9b5cc;text-decoration:none;font-size:.88rem;padding:6px 0}
+.mods a:hover,.mods a[aria-current]{color:#c9a86a}
+sub{font-size:.7em}
+@media(max-width:860px){.mods{display:flex;margin:0 0 0 10px;padding:0;border:0;gap:12px;white-space:nowrap}.mods a{padding:10px 0}}
+nav{border-right:1px solid rgba(255,255,255,.07)}
+nav .theme{width:auto;display:inline-flex;gap:8px;align-items:center;margin-top:14px;padding:9px 14px;border:1px solid rgba(201,168,106,.5);border-radius:2px;color:#e8ebf2;font-size:.85rem;background:none}
+nav .theme:hover{background:rgba(201,168,106,.14);color:#fff}
+@media(max-width:860px){nav .theme{margin:0 0 0 8px;white-space:nowrap;padding:8px 12px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav aria-label="Lessons">
+<h1>Modeling and Hedging Variance</h1>
+<p>Risk Management — Module 2</p>
+<button data-t="0">1. Trading volatility: variance swaps</button>
+<button data-t="1">2. Variance swaps: spanning with options</button>
+<button data-t="2">3. Jumping for better volatility estimation</button>
+<button data-t="3">4. Order statistics estimator in action</button>
+<div class="mods"><a href="index.html">Module 1: Systemic risk</a><a href="module2.html" aria-current="page">Module 2: Variance</a><button class="theme" id="theme" type="button" aria-label="Switch between light and dark mode"></button></div>
+</nav>
+<main>
+
+<section>
+<h2>Lesson 1: Trading volatility with variance swaps</h2>
+<p class="lead">A variance swap lets you trade realized volatility directly. At expiry, the long side receives the difference between realized variance and a pre-agreed strike, so it is a pure bet on how much the market will move.</p>
+<h3>The payoff</h3>
+<p>Payoff = N<sub>var</sub> × (σ²<sub>realized</sub> − K²<sub>var</sub>), where volatilities are quoted in percentage points. Traders think in vega notional, the profit for a one-point move in volatility near the strike. The conversion is N<sub>var</sub> = Vega notional ÷ (2K).</p>
+<table>
+<tr><th>Instrument</th><th>Payoff in realized vol σ</th><th>Shape</th></tr>
+<tr><td>Variance swap</td><td>N<sub>var</sub>(σ² − K²)</td><td>Convex: gains grow faster than losses</td></tr>
+<tr><td>Volatility swap</td><td>Vega × (σ − K)</td><td>Linear in volatility</td></tr>
+</table>
+<p>Because variance is convex in volatility, the long variance swap gains more when volatility spikes than it loses when volatility falls by the same amount. The variance strike therefore trades above the corresponding volatility swap strike, and the difference is the convexity premium.</p>
+<div class="lab">
+<h3>Variance swap payoff</h3>
+<p class="note">Values are in dollars. The dashed line is a volatility swap with the same vega at the strike.</p>
+<div class="row"><label for="k1">Strike volatility K</label><input id="k1" type="range" min="10" max="40" value="20"><output id="k1o"></output></div>
+<div class="row"><label for="v1">Vega notional ($k per vol point)</label><input id="v1" type="range" min="10" max="500" step="10" value="100"><output id="v1o"></output></div>
+<div class="row"><label for="r1">Realized volatility σ</label><input id="r1" type="range" min="5" max="70" value="30"><output id="r1o"></output></div>
+<svg id="c1" viewBox="0 0 400 210" role="img" aria-label="Payoff chart" style="width:100%;max-width:620px"></svg>
+<div class="stat"><div><small>Variance notional</small><b id="nv"></b></div><div><small>Variance swap P&amp;L</small><b id="pv"></b></div><div><small>Vol swap P&amp;L</small><b id="pl"></b></div><div><small>Convexity gap</small><b id="gap"></b></div></div>
+</div>
+<div class="quiz" data-l="0"></div>
+</section>
+
+<section>
+<h2>Lesson 2: Spanning variance with options</h2>
+<p class="lead">A variance swap needs no view on the volatility model. Its fair strike can be replicated with a strip of out-of-the-money options, weighted by 1/K², plus dynamic trading in the underlying.</p>
+<h3>The replication formula</h3>
+<p>For a diffusion with zero rates, the fair variance strike is K²<sub>var</sub> = (2/T) × [∫ Put(K)/K² dK below the forward + ∫ Call(K)/K² dK above it]. The 1/K² weights mean low strikes carry the most weight per option, which is why the skew raises the fair strike above the at-the-money volatility.</p>
+<p>In practice only a finite set of strikes trades. Truncating the range or using wide strike spacing leaves part of the integral out and biases the fair strike downward.</p>
+<div class="lab">
+<h3>Pricing a variance swap from a smile</h3>
+<p class="note">Forward 100, expiry 3 months. The implied volatility smile is σ(K) = ATM + skew × ln(K/F) + curvature × ln(K/F)². The shaded band marks the strikes you actually use.</p>
+<div class="row"><label for="atm">ATM volatility (%)</label><input id="atm" type="range" min="10" max="50" value="20"><output id="atmO"></output></div>
+<div class="row"><label for="sk">Skew</label><input id="sk" type="range" min="-0.5" max="0" step="0.05" value="-0.2"><output id="skO"></output></div>
+<div class="row"><label for="cv">Curvature</label><input id="cv" type="range" min="0" max="1" step="0.05" value="0.3"><output id="cvO"></output></div>
+<div class="row"><label for="rg">Strike range (± % of forward)</label><input id="rg" type="range" min="10" max="90" step="5" value="50"><output id="rgO"></output></div>
+<div class="row"><label for="dk">Strike spacing</label><input id="dk" type="range" min="1" max="10" value="2"><output id="dkO"></output></div>
+<svg id="c2" viewBox="0 0 400 190" role="img" aria-label="Implied volatility smile" style="width:100%;max-width:620px"></svg>
+<div class="stat"><div><small>Fair vol strike</small><b id="fs"></b></div><div><small>ATM vol</small><b id="as"></b></div><div><small>Skew premium</small><b id="sp"></b></div><div><small>Truncation error</small><b id="te"></b></div><div><small>Options used</small><b id="no"></b></div></div>
+</div>
+<div class="quiz" data-l="1"></div>
+</section>
+
+<section>
+<h2>Lesson 3: Jumping for better volatility estimation</h2>
+<p class="lead">Realized variance adds up squared returns, so a single jump can dominate it. Jump-robust estimators separate the smooth diffusive part of variance from the discontinuous part.</p>
+<h3>Realized variance versus bipower variation</h3>
+<ul>
+<li><b>Realized variance (RV)</b> = Σ r<sub>i</sub>². It converges to diffusive variance plus the sum of squared jumps.</li>
+<li><b>Bipower variation (BV)</b> = (π/2) Σ |r<sub>i</sub>||r<sub>i−1</sub>|. A jump appears in only one factor of each product, so its impact shrinks, and BV converges to diffusive variance.</li>
+<li><b>Jump component</b> ≈ max(RV − BV, 0). Returns far above a multiple of the local BV-based volatility can be flagged as jumps.</li>
+</ul>
+<div class="lab">
+<h3>Jumps in a trading day</h3>
+<p class="note">78 five-minute returns with daily diffusive volatility of 1%. Jump sizes are multiples of daily volatility.</p>
+<div class="row"><label for="jn">Number of jumps</label><input id="jn" type="range" min="0" max="3" value="1"><output id="jnO"></output></div>
+<div class="row"><label for="js">Jump size (× daily σ)</label><input id="js" type="range" min="0.5" max="6" step="0.25" value="3"><output id="jsO"></output></div>
+<svg id="c3" viewBox="0 0 400 140" role="img" aria-label="Intraday returns" style="width:100%;max-width:620px"></svg>
+<div class="stat"><div><small>True diffusive variance</small><b id="iv3"></b></div><div><small>RV</small><b id="rv3"></b></div><div><small>BV</small><b id="bv3"></b></div><div><small>Jump flags</small><b id="fl3"></b></div></div>
+<p class="note">Variance is in %². A true value close to 1 means volatility close to 1% per day.</p>
+</div>
+<div class="quiz" data-l="2"></div>
+</section>
+
+<section>
+<h2>Lesson 4: The order statistics estimator in action</h2>
+<p class="lead">Quantile-based estimators split the day into blocks and look at order statistics of absolute returns within each block. The median and other quantiles ignore extreme values, so jumps barely move them.</p>
+<h3>How it works</h3>
+<ol>
+<li>Split n returns into blocks of m consecutive returns.</li>
+<li>In each block, take the p-quantile of |r|. For normal returns, it equals σ × z<sub>p</sub>, where z<sub>p</sub> is the matching quantile of |N(0,1)|.</li>
+<li>Estimate the block volatility as quantile ÷ z<sub>p</sub>, square it, multiply by m, and sum over blocks.</li>
+</ol>
+<p>A jump can contaminate at most one value per block, so unless it moves the chosen order statistic it has no effect. Smaller blocks isolate jumps better; larger blocks give a more efficient estimate. Higher quantiles use more information but are closer to the extremes.</p>
+<div class="lab">
+<h3>Estimator comparison on 390 one-minute returns</h3>
+<p class="note">Bars show each estimate divided by the true diffusive variance. A perfect estimator reaches the line at 1.0.</p>
+<div class="row"><label for="p4">Quantile level p</label><input id="p4" type="range" min="0.3" max="0.95" step="0.05" value="0.5"><output id="p4o"></output></div>
+<div class="row"><label for="m4">Block size m</label><input id="m4" type="range" min="5" max="39" value="13"><output id="m4o"></output></div>
+<div class="row"><label for="j4">Number of jumps</label><input id="j4" type="range" min="0" max="5" value="3"><output id="j4o"></output></div>
+<div class="row"><label for="s4">Jump size (× daily σ)</label><input id="s4" type="range" min="0.5" max="6" step="0.25" value="2.5"><output id="s4o"></output></div>
+<div class="row"><label for="n4">Microstructure noise</label><input id="n4" type="range" min="0" max="1" step="0.05" value="0"><output id="n4o"></output></div>
+<svg id="c4" viewBox="0 0 400 170" role="img" aria-label="Estimator comparison" style="width:100%;max-width:620px"></svg>
+<div class="stat"><div><small>RV error</small><b id="e1"></b></div><div><small>BV error</small><b id="e2"></b></div><div><small>OSV error</small><b id="e3"></b></div></div>
+<p class="note" id="m4msg"></p>
+</div>
+<div class="quiz" data-l="3"></div>
+</section>
+
+</main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const secs=[...document.querySelectorAll('main section')],btns=[...document.querySelectorAll('nav button[data-t]')];
+function show(i){secs.forEach((s,j)=>s.classList.toggle('on',i===j));btns.forEach((b,j)=>b.setAttribute('aria-current',i===j));try{localStorage.setItem('m2_tab',i)}catch(e){}scrollTo(0,0)}
+btns.forEach((b,i)=>b.onclick=()=>show(i));
+let st=0;try{st=+localStorage.getItem('m2_tab')||0}catch(e){}show(st);
+/* seeded normals */
+let seed=11;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const gauss=()=>Math.sqrt(-2*Math.log(rnd()))*Math.cos(2*Math.PI*rnd());
+const zq=p=>{const t=Math.sqrt(-2*Math.log(p));return-(t-(2.515517+.802853*t+.010328*t*t)/(1+1.432788*t+.189269*t*t+.001308*t**3))};
+const erf=x=>{const s=Math.sign(x);x=Math.abs(x);const t=1/(1+.3275911*x);return s*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x))};
+const N=x=>.5*(1+erf(x/Math.SQRT2));
+const f$=x=>(x<0?'−':'')+'$'+(Math.abs(x)>=1e6?(Math.abs(x)/1e6).toFixed(2)+'M':Math.abs(x)>=1e3?(Math.abs(x)/1e3).toFixed(0)+'k':Math.abs(x).toFixed(0));
+const path=(pts,c,d)=>`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="${c}" stroke-width="2"${d?' stroke-dasharray="5 4"':''}/>`;
+
+/* L1 */
+function l1(){const K=+$('k1').value,V=+$('v1').value*1000,R=+$('r1').value,Nv=V/(2*K);
+ $('k1o').textContent=K;$('v1o').textContent=$('v1').value;$('r1o').textContent=R;
+ const pv=Nv*(R*R-K*K),pl=V*(R-K),M=70,hi=Nv*(M*M-K*K),lo=-Nv*K*K;
+ const X=s=>40+s/M*350,Y=y=>10+(hi-y)/(hi-lo)*170;
+ const A=[],B=[];for(let s=0;s<=M;s+=2){A.push([X(s),Y(Nv*(s*s-K*K))]);B.push([X(s),Y(V*(s-K))])}
+ let h=`<line x1="40" x2="390" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/><line x1="${X(K)}" x2="${X(K)}" y1="10" y2="180" stroke="var(--line)" stroke-dasharray="3 3"/>`+path(A,'var(--accent)')+path(B,'var(--brass)',1);
+ h+=`<circle cx="${X(R)}" cy="${Y(pv)}" r="5" fill="var(--alert)"/><text x="40" y="200">Realized vol 0</text><text x="390" y="200" text-anchor="end">70</text><text x="${X(K)+4}" y="22">Strike</text>`;
+ $('c1').innerHTML=h;$('nv').textContent='$'+Nv.toFixed(0)+'/pt²';
+ $('pv').textContent=f$(pv);$('pl').textContent=f$(pl);$('gap').textContent=f$(pv-pl);$('pv').style.color=pv>=0?'var(--ok)':'var(--alert)'}
+['k1','v1','r1'].forEach(i=>$(i).oninput=l1);l1();
+
+/* L2 */
+function bs(F,K,T,s,call){const sd=s*Math.sqrt(T),d1=(Math.log(F/K)+.5*sd*sd)/sd,d2=d1-sd,c=F*N(d1)-K*N(d2);return call?c:c-F+K}
+function l2(){const F=100,T=.25,atm=+$('atm').value/100,sk=+$('sk').value,cv=+$('cv').value,rg=+$('rg').value/100,dk=+$('dk').value;
+ $('atmO').textContent=Math.round(atm*100);$('skO').textContent=sk.toFixed(2);$('cvO').textContent=cv.toFixed(2);$('rgO').textContent='±'+Math.round(rg*100)+'%';$('dkO').textContent=dk;
+ const sig=K=>{const x=Math.log(K/F);return Math.max(.05,atm+sk*x+cv*x*x)};
+ const price=(r,d)=>{let s=0,n=0;for(let K=F*(1-r);K<=F*(1+r)+1e-9;K+=d){if(K<=0)continue;s+=bs(F,K,T,sig(K),K>F)/(K*K)*d;n++}return[Math.sqrt(2/T*s),n]};
+ const[fs,n]=price(rg,dk),[bm]=price(.95,.25);
+ const X=K=>10+(K-5)/190*380,Y=v=>170-v/.9*160;const P=[];for(let K=5;K<=195;K+=3)P.push([X(K),Y(sig(K))]);
+ let h=`<rect x="${X(F*(1-rg))}" width="${X(F*(1+rg))-X(F*(1-rg))}" y="10" height="160" fill="var(--brass)" opacity=".15"/>`+path(P,'var(--accent)')+`<line x1="${X(F)}" x2="${X(F)}" y1="10" y2="170" stroke="var(--line)" stroke-dasharray="3 3"/><text x="10" y="186">Strike 5</text><text x="390" y="186" text-anchor="end">195</text><text x="${X(F)+4}" y="22">Forward</text>`;
+ $('c2').innerHTML=h;
+ $('fs').textContent=(fs*100).toFixed(1)+'%';$('as').textContent=(atm*100).toFixed(1)+'%';$('sp').textContent=((fs-atm)*100).toFixed(1)+' pts';$('te').textContent=((bm-fs)*100).toFixed(2)+' pts';$('no').textContent=n}
+['atm','sk','cv','rg','dk'].forEach(i=>$(i).oninput=l2);l2();
+
+/* L3 */
+const n3=78,z3=[...Array(n3)].map(gauss),pos3=[15,40,63],sg3=[1,-1,1];
+function l3(){const nj=+$('jn').value,js=+$('js').value;$('jnO').textContent=nj;$('jsO').textContent=js.toFixed(2);
+ const r=z3.map(z=>z/Math.sqrt(n3));for(let i=0;i<nj;i++)r[pos3[i]]+=sg3[i]*js/1;
+ const iv=z3.reduce((s,z)=>s+z*z/n3,0),rv=r.reduce((s,x)=>s+x*x,0);
+ let bv=0;for(let i=1;i<n3;i++)bv+=Math.abs(r[i])*Math.abs(r[i-1]);bv*=Math.PI/2*n3/(n3-1);
+ const thr=3*Math.sqrt(bv/n3);let fl=0;const w=380/n3,mx=Math.max(...r.map(Math.abs),thr*1.2);
+ let h=`<line x1="10" x2="390" y1="70" y2="70" stroke="var(--line)"/>`;
+ r.forEach((x,i)=>{const j=Math.abs(x)>thr;if(j)fl++;const ht=Math.abs(x)/mx*62;h+=`<rect x="${10+i*w}" width="${w-1}" y="${x>=0?70-ht:70}" height="${ht}" fill="${j?'var(--alert)':'var(--accent)'}" opacity="${j?1:.7}"/>`});
+ h+=`<line x1="10" x2="390" y1="${70-thr/mx*62}" y2="${70-thr/mx*62}" stroke="var(--brass)" stroke-dasharray="4 3"/><text x="12" y="${68-thr/mx*62}">Jump threshold</text>`;
+ $('c3').innerHTML=h;$('iv3').textContent=iv.toFixed(2);$('rv3').textContent=rv.toFixed(2);$('bv3').textContent=bv.toFixed(2);$('fl3').textContent=fl}
+['jn','js'].forEach(i=>$(i).oninput=l3);l3();
+
+/* L4 */
+const n4=390,z4=[...Array(n4)].map(gauss),e4=[...Array(n4+1)].map(gauss),pos4=[60,150,230,300,350],sg4=[1,-1,-1,1,-1];
+function l4(){const p=+$('p4').value,m=+$('m4').value,nj=+$('j4').value,js=+$('s4').value,nz=+$('n4').value;
+ $('p4o').textContent=p.toFixed(2);$('m4o').textContent=m;$('j4o').textContent=nj;$('s4o').textContent=js.toFixed(2);$('n4o').textContent=nz.toFixed(2);
+ const sg=1/Math.sqrt(n4),r=z4.map((z,i)=>z*sg+nz*sg*(e4[i+1]-e4[i]));for(let i=0;i<nj;i++)r[pos4[i]]+=sg4[i]*js;
+ const iv=z4.reduce((s,z)=>s+z*z/n4,0),rv=r.reduce((s,x)=>s+x*x,0);
+ let bv=0;for(let i=1;i<n4;i++)bv+=Math.abs(r[i])*Math.abs(r[i-1]);bv*=Math.PI/2*n4/(n4-1);
+ let osv=0,nb=Math.floor(n4/m);for(let b=0;b<nb;b++){const a=r.slice(b*m,b*m+m).map(Math.abs).sort((x,y)=>x-y),k=Math.min(m-1,Math.floor(p*m)),lv=(k+.5)/m,zp=-zq((1-lv)/2);osv+=m*(a[k]/zp)**2}
+ osv*=n4/(nb*m);
+ const vals=[rv,bv,osv].map(v=>v/iv),names=['RV','BV','OSV'],Y=v=>150-v/3*130,cols=['var(--muted)','var(--brass)','var(--accent)'];
+ let h=`<line x1="30" x2="390" y1="${Y(1)}" y2="${Y(1)}" stroke="var(--ink)" stroke-dasharray="4 3"/><text x="32" y="${Y(1)-4}">Truth = 1.0</text>`;
+ vals.forEach((v,i)=>{const x=80+i*100,y=Y(Math.min(v,3));h+=`<rect x="${x}" y="${y}" width="56" height="${150-y}" fill="${cols[i]}"/><text x="${x+28}" y="${y-5}" text-anchor="middle">${v.toFixed(2)}</text><text x="${x+28}" y="166" text-anchor="middle">${names[i]}</text>`});
+ $('c4').innerHTML=h;['e1','e2','e3'].forEach((id,i)=>{const e=(vals[i]-1)*100;$(id).textContent=(e>=0?'+':'')+e.toFixed(0)+'%';$(id).style.color=Math.abs(e)<15?'var(--ok)':'var(--alert)'});
+ $('m4msg').textContent=nz>0.2?'Noise inflates every estimator, since it adds variance to each return. Real applications pair order statistics with subsampling or pre-averaging.':nj?'Compare RV with OSV: jumps push RV up while the quantile estimate stays near the truth.':'With no jumps, all three estimators are close to the truth.'}
+['p4','m4','j4','s4','n4'].forEach(i=>$(i).oninput=l4);l4();
+
+/* quizzes */
+const Q=[
+[{q:'A long variance swap pays off when…',o:['Realized variance exceeds the strike','Implied vol exceeds realized vol','The underlying rises','Rates fall'],a:0,e:'The payoff is N × (realized variance − strike variance).'},
+ {q:'Why is the variance swap payoff convex in volatility?',o:['It is quoted in dollars','Variance is the square of volatility','It has a cap','It uses options'],a:1,e:'Squaring makes gains from vol increases larger than losses from equal decreases.'},
+ {q:'How is variance notional related to vega notional?',o:['N_var = Vega × 2K','N_var = Vega ÷ (2K)','N_var = Vega × K²','They are equal'],a:1,e:'Differentiating σ² − K² gives 2K per vol point, so N_var = Vega / (2K).'}],
+[{q:'In the replication portfolio, options are weighted by…',o:['1/K','1/K²','K','Equal weights'],a:1,e:'The 1/K² weights give the portfolio a payoff proportional to log-contract convexity.'},
+ {q:'Why does a negative skew raise the fair variance strike above ATM vol?',o:['Calls are expensive','Low-strike options carry high weights and high implied vols','Skew lowers rates','Puts are not used'],a:1,e:'1/K² weighting emphasizes low strikes, where implied vol is higher.'},
+ {q:'Truncating the strike range causes…',o:['An upward bias','A downward bias in the fair strike','No bias','A jump risk'],a:1,e:'Excluded wing options contribute positive variance, so leaving them out understates it.'}],
+[{q:'Why is bipower variation robust to jumps?',o:['It uses only large returns','Each product pairs a jump return with a normal return, so its effect shrinks','It ignores the first return','It uses squared returns'],a:1,e:'In the limit, products of adjacent absolute returns do not accumulate jump variation.'},
+ {q:'RV − BV is an estimate of…',o:['Diffusive variance','The jump contribution to variance','Microstructure noise','Skew'],a:1,e:'RV includes jumps and BV does not, so the difference isolates jump variation.'},
+ {q:'If RV is much larger than BV on a day, the day most likely contained…',o:['A volatility smile','One or more price jumps','No trading','Low volatility'],a:1,e:'A large gap signals discontinuous price moves.'}],
+[{q:'Why does the median of absolute returns resist jumps?',o:['It uses all returns equally','A jump moves only the extreme order statistics, not the middle','It is always zero','It removes noise'],a:1,e:'A jump changes the maximum but barely shifts middle order statistics.'},
+ {q:'What does a larger block size do?',o:['More efficient but less jump isolation','Less efficient but better jump isolation','Removes noise','Nothing'],a:0,e:'Bigger blocks give more data per quantile but are more likely to contain several jumps.'},
+ {q:'Which problem do these estimators NOT fix by themselves?',o:['A single large jump','Microstructure noise','Heavy tails','Outliers'],a:1,e:'Noise affects all returns, so it needs subsampling or pre-averaging.'}]];
+document.querySelectorAll('.quiz').forEach(el=>{const l=+el.dataset.l;let h='<h3>Check your understanding</h3>';
+ Q[l].forEach((x,i)=>{h+=`<div class="q" data-i="${i}"><p>${x.q}</p>${x.o.map((o,j)=>`<label><input type="radio" name="q${l}_${i}" value="${j}"> ${o}</label>`).join('')}<div class="fb"></div></div>`});
+ el.innerHTML=h;
+ el.querySelectorAll('.q').forEach(qe=>qe.onchange=e=>{const x=Q[l][+qe.dataset.i],ok=+e.target.value===x.a,fb=qe.querySelector('.fb');
+  fb.className='fb '+(ok?'good':'bad');fb.textContent=(ok?'Correct. ':'Not quite. ')+x.e;qe.dataset.ok=ok?1:0;
+  if(el.querySelectorAll('.q[data-ok="1"]').length===Q[l].length)btns[l].classList.add('done')})});
+</script>
+<script>
+(function(){const r=document.documentElement,b=document.getElementById('theme');
+function set(t){r.dataset.theme=t;try{localStorage.setItem('sr_theme',t)}catch(e){}b.textContent=t==='dark'?'☀ Switch to light':'☾ Switch to dark';b.setAttribute('aria-pressed',t==='dark')}
+set(r.dataset.theme||'dark');b.onclick=()=>set(r.dataset.theme==='dark'?'light':'dark')})();
+</script>
+</body>
+</html>
